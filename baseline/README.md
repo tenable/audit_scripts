@@ -19,7 +19,7 @@ The script was tested using __.nessus__ files exported from Tenable.IO and Nessu
 
 There are a number of use cases that this could be used for.
 
-- __Basilne Scanning:__ Create a system that represents your baseline against the company auditing policy, and scan this system with the audit file.  Use the script to record the configuration of your Baseline Reference Audit and scan all other systems with the new audit file to compare the configuration against the baseline.  This can identify any systems that may need remediation actions.
+- __Baseline Scanning:__ Create a system that represents your baseline against the company auditing policy, and scan this system with the audit file.  Use the script to record the configuration of your Baseline Reference Audit and scan all other systems with the new audit file to compare the configuration against the baseline.  This can identify any systems that may need remediation actions.
 - __Change Identification:__ On a single server, create an audit file to monitor the parts of the system that must be monitored for changes, and create your baseline reference audit file by scanning the server with your audit file.  To capture the current state of the server, use the script to create your baseline audit file, and schedule a periodic scan of the server with the new audit file.  In any instance that the scan identifies a failed check, there must have been an actor that made a change to the system.
 
 ## Operation
