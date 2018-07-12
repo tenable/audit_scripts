@@ -27,7 +27,7 @@ show_verbose = False
 show_time = False
 
 
-def parse_args():
+def parse_args(parameters):
     global show_time, show_verbose
 
     parser = argparse.ArgumentParser(description=('Read audit file and nessus '
@@ -50,14 +50,27 @@ def parse_args():
     parser.add_argument('nessus', type=str, nargs=1,
                         help='nessus file to use values from')
 
-    args = parser.parse_args()
+    args = parser.parse_args(parameters)
 
     if args.timestamp:
         show_time = True
     if args.verbose:
         show_verbose = True
 
+    args.filename = make_list(args.filename)[0]
+    args.audit = make_list(args.audit)[0]
+    args.nessus = make_list(args.nessus)[0]
+
     return args
+
+
+def make_list(target=None):
+    if target is None:
+        return []
+    elif isinstance(target, list):
+        return target
+    else:
+        return [target]
 
 
 def display(message, verbose=False, exit=0):
@@ -68,10 +81,14 @@ def display(message, verbose=False, exit=0):
         timestamp = datetime.datetime.strftime(now, '%Y/%m/%d %H:%M:%S')
         message = '{} {}'.format(timestamp, message)
 
+    out = sys.stdout
+    if exit > 0:
+        out = sys.stderr
+
     if verbose and show_verbose:
-        print(message)
+        print(message, file=out)
     elif not verbose:
-        print(message)
+        print(message, file=out)
 
     if exit > 0:
         sys.exit(exit)
@@ -101,33 +118,31 @@ def write_file(filename, content, overwrite=False):
         display('ERROR: writing file: {}: {}'.format(filename, e), exit=1)
 
 
-def get_values_from_nessus(filenames):
+def get_values_from_nessus(contents):
     global no_value
     values = {}
 
-    for filename in filenames:
-        contents = read_file(filename)
-        try:
-            tree = ET.fromstring(contents)
-            for report in tree.findall('Report'):
-                for host in report.findall('ReportHost'):
-                    hostname = host.attrib['name']
-                    display('Retrieving values from {}'.format(hostname),
-                            verbose=True)
-                    values[hostname] = {}
-                    for item in host.findall('ReportItem'):
-                        description = ''
-                        value = no_value
-                        for child in item:
-                            if 'compliance-check-name' in child.tag:
-                                description = child.text.strip()
-                            elif 'compliance-actual-value' in child.tag:
-                                value = child.text
-                        if description and value != no_value:
-                            values[hostname][description] = value
-        except Exception as e:
-            display('ERROR: parsing file: {}: {}'.format(filename, e), exit=1)
-            sys.exit(1)
+    try:
+        tree = ET.fromstring(contents)
+        for report in tree.findall('Report'):
+            for host in report.findall('ReportHost'):
+                hostname = host.attrib['name']
+                display('Retrieving values from {}'.format(hostname),
+                        verbose=True)
+                values[hostname] = {}
+                for item in host.findall('ReportItem'):
+                    description = ''
+                    value = no_value
+                    for child in item:
+                        if 'compliance-check-name' in child.tag:
+                            description = child.text.strip()
+                        elif 'compliance-actual-value' in child.tag:
+                            value = child.text
+                    if description and value != no_value:
+                        values[hostname][description] = value
+    except Exception as e:
+        display('ERROR: parsing nessus file: {}'.format(e), exit=1)
+        sys.exit(1)
     
     return values
 
@@ -139,69 +154,72 @@ def create_filename(filename, hostname):
 
 
 def strip_quotes(target):
-    stripped = target.strip()
-    if stripped[0] in '"\'' and stripped[0] == stripped[-1]:
-        return stripped[1:-1]
+    if isinstance(target, str):
+        stripped = target.strip()
+        if stripped[0] in '"\'' and stripped[0] == stripped[-1]:
+            return stripped[1:-1]
+        else:
+            return stripped
+    elif isinstance(target, list):
+        return [strip_quotes(i) for i in target]
     else:
-        return stripped
+        return target
 
 
-def apply_values_to_audit(filenames, values):
+def apply_values_to_audit(filename, contents, values):
     global regexes
 
     audits = {}
 
-    for filename in filenames:
-        contents = read_file(filename)
-        lines = contents.split('\n')
-        for host in values:
-            display('Applying values for {}'.format(host), verbose=True)
-            auditname = create_filename(filename, host)
-            audit_lines = []
-            in_condition = False
-            in_item = False
-            known_good = ''
-            space = ''
+    lines = contents.split('\n')
+    for host in values:
+        display('Applying values for {}'.format(host), verbose=True)
+        auditname = create_filename(filename, host)
+        audit_lines = []
+        in_condition = False
+        in_item = False
+        known_good = ''
+        space = ''
 
-            for line in lines:
-                if regexes['econ'].match(line):
-                    in_condition = False
+        for line in lines:
+            if regexes['econ'].match(line):
+                in_condition = False
 
-                elif regexes['scon'].match(line):
-                    in_condition = True
+            elif regexes['scon'].match(line):
+                in_condition = True
 
-                elif regexes['sitem'].match(line):
-                    in_item = True
+            elif regexes['sitem'].match(line):
+                in_item = True
 
-                elif regexes['eitem'].match(line):
-                    if not known_good == '':
-                        value = known_good
-                        if '"' in known_good and "'" not in known_good:
-                            value = "'{}'".format(known_good)
-                        elif '"' not in known_good and "'" in known_good:
-                            value = '"{}"'.format(known_good)
-                        elif '"' not in known_good and "'" not in known_good:
-                            value = '"{}"'.format(known_good)
-                        else:
-                            display(value, exit=1)
+            elif regexes['eitem'].match(line):
+                if not known_good == '':
+                    value = known_good
+                    if '"' in known_good and "'" not in known_good:
+                        value = "'{}'".format(known_good)
+                    elif '"' not in known_good and "'" in known_good:
+                        value = '"{}"'.format(known_good)
+                    elif '"' not in known_good and "'" not in known_good:
+                        value = '"{}"'.format(known_good)
+                    else:
+                        display(value, exit=1)
 
-                        new_line = '{}known_good : {}'.format(space, value)
-                        audit_lines.append(new_line)
-                    known_good = ''
+                    new_line = '{}known_good : {}'.format(space, value)
+                    audit_lines.append(new_line)
+                known_good = ''
 
-                    in_item = False
+                in_item = False
 
-                elif regexes['desc'].match(line):
-                    description = ':'.join(line.split(':')[1:]).strip()
-                    stripped = strip_quotes(description)
+            elif regexes['desc'].match(line):
+                description = ':'.join(line.split(':')[1:]).strip()
+                stripped = strip_quotes(description)
 
-                    if stripped in values[host]:
-                        known_good = values[host][stripped]
-                        space = regexes['desc'].findall(line)[0]
+                if stripped in values[host]:
+                    known_good = values[host][stripped]
+                    space = regexes['desc'].findall(line)[0]
 
-                audit_lines.append(line)
+            audit_lines.append(line)
 
-            audits[auditname] = '\n'.join(audit_lines)
+        audits[auditname] = '\n'.join(audit_lines)
 
     return audits
 
@@ -217,13 +235,17 @@ def output_audits(audits, overwrite, output_file):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    args = parse_args(sys.argv[1:])
     display('Start')
+    display('Reading nessus file')
+    nessus = read_file(args.nessus)
     display('Retrieving values')
-    values = get_values_from_nessus(args.nessus)
+    values = get_values_from_nessus(nessus)
+    display('Reading audit file')
+    audit = read_file(args.audit)
     display('Applying values')
-    audits = apply_values_to_audit(args.audit, values)
+    outputs = apply_values_to_audit(args.audit, audit, values)
     display('Outputing file')
-    output_audits(audits, args.overwrite, args.filename)
+    output_audits(outputs, args.overwrite, args.filename)
     display('Done')
 
