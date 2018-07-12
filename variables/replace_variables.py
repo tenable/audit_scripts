@@ -188,7 +188,7 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     display('Start', verbose=True)
     display('Reading file values', verbose=True)
-    audit = read_file(args.audit[0])
+    audit = read_file(args.audit)
     display('Identifying variables', verbose=True)
     variables = get_variables(audit)
     display('Replacing values', verbose=True)
