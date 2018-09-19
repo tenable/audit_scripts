@@ -42,7 +42,7 @@ optional arguments:
 test$ ./view_audit_structure.py -tv DISA_STIG_MS_Windows_10_v1r9.audit
 2018/09/19 03:55:59 Start
 2018/09/19 03:55:59 Reading file values
-2018/09/19 03:55:59 Reading ../../../git/checks/Windows/audit/DISA_STIG_MS_Windows_10_v1r9.audit
+2018/09/19 03:55:59 Reading DISA_STIG_MS_Windows_10_v1r9.audit
 2018/09/19 03:55:59 Computing audit structure
 2018/09/19 03:55:59 Outputing structure
 2018/09/19 03:55:59   47 <if>
