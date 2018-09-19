@@ -9,3 +9,7 @@ Python script that will read .audit file and .nessus file and create a new basel
 
 Python script that will replace the variable names in an audit file with thier default values.
 
+## structure/view_audit_structure.py
+
+Python script to visualize the structure of the audit file, most notably the conditional logic of the audit file.
+
