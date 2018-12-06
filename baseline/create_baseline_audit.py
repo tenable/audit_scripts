@@ -109,7 +109,7 @@ def read_file(filename):
 def write_file(filename, content, overwrite=False):
     if os.path.isfile(filename) and not overwrite:
         display('ERROR: file exists: {}'.format(filename), exit=1)
-    
+
     try:
         display('Writing {}'.format(filename), verbose=True)
         with open(filename, 'w') as file_out:
@@ -143,7 +143,7 @@ def get_values_from_nessus(contents):
     except Exception as e:
         display('ERROR: parsing nessus file: {}'.format(e), exit=1)
         sys.exit(1)
-    
+
     return values
 
 
@@ -200,8 +200,11 @@ def apply_values_to_audit(filename, contents, values):
                         value = '"{}"'.format(known_good)
                     elif '"' not in known_good and "'" not in known_good:
                         value = '"{}"'.format(known_good)
+                    elif '"' in known_good and "'" in known_good:
+                        value = '"{}"'.format(known_good.replace('"', '\\"'))
                     else:
-                        display(value, exit=1)
+                        display('ERROR: Unhandled value: {}'.format(value),
+                                exit=1)
 
                     new_line = '{}known_good : {}'.format(space, value)
                     audit_lines.append(new_line)
@@ -248,4 +251,3 @@ if __name__ == '__main__':
     display('Outputing file')
     output_audits(outputs, args.overwrite, args.filename)
     display('Done')
-

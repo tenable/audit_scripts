@@ -275,6 +275,31 @@ def test_apply_values_to_audit_multiple_hosts():
     assert actual == expected
 
 
+def test_apply_values_to_audit_quoted_values():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+    expected_content = ('<check_type:"Unix">\n'
+                        '<custom_item>\n'
+                        '  description: "Test value one"\n'
+                        '  known_good : __VAL__\n'
+                        '</custom_item>\n'
+                        '</check_type>')
+    test_values = [
+        [{ '192.168.0.10': { 'Test value one': 'ab"cd' }}, '\'ab"cd\''],
+        [{ '192.168.0.10': { 'Test value one': "ab'cd" }}, '"ab\'cd"'],
+        [{ '192.168.0.10': { 'Test value one': 'abcd' }}, '"abcd"'],
+        [{ '192.168.0.10': { 'Test value one': 'a"bc\'"d' }}, '"a\\"bc\'\\"d"']
+    ]
+    for (test_value, expected_value) in test_values:
+        actual = apply_values_to_audit('abc.audit', test_content, test_value)
+        test_expected = expected_content.replace('__VAL__', expected_value)
+        expected = {'abc.192.168.0.10.audit': test_expected}
+        assert actual == expected
+
+
 if __name__ == '__main__':
     import pytest
     pytest.main(['-v', '.'])
