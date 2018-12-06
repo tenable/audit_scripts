@@ -201,7 +201,8 @@ def apply_values_to_audit(filename, contents, values):
                     elif '"' not in known_good and "'" not in known_good:
                         value = '"{}"'.format(known_good)
                     else:
-                        display(value, exit=1)
+                        display('ERROR: Unhandled value: {}'.format(value),
+                                exit=1)
 
                     new_line = '{}known_good : {}'.format(space, value)
                     audit_lines.append(new_line)
