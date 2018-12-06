@@ -13,6 +13,7 @@ Some things to consider:
 - Best results when used with the same audit file that was used in the first scan, and only one audit file per scan.
 - Actual values are not applied to checks that are within the conditional sections of audit if/then/else structures. This was done to maintain consistency with the conditional logic.
 - Any checks that use custom commands, such as CMD_EXEC or SQL_POLICY, may have inconsistent or unsupported output.  SQL statements may return values in different orders if not sorted or system commands may output Unicode characters in their output.  If developing checks, consider sorting output where possible into a consistent order and sanitizing any non-ascii characters from the output.
+- Values that have both single and double quotes in the value will be placed in known_good fields using double quotes, and escaping the instances of double quotes in the value.  This should support most plugins.
 - Checks that use static report items to post a WARNING or FAILED will not be modified by known_good values.
 
 The script was tested using __.nessus__ files exported from Tenable.IO and Nessus Pro.
