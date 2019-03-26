@@ -86,9 +86,9 @@ def display(message, verbose=False, exit=0):
         out = sys.stderr
 
     if verbose and show_verbose:
-        print(message, file=out)
+        out.write(message.rstrip() + '\n')
     elif not verbose:
-        print(message, file=out)
+        out.write(message.rstrip() + '\n')
 
     if exit > 0:
         sys.exit(exit)
