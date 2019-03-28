@@ -4,7 +4,7 @@
 
 The __offline_to_sc.py__ script is used to take the properties from a .nessus file and place them in a 2nd .nessus file to allow it to be imported into Tenable.sc.
 
-Tenable.sc does not support offline compliance scanning due to the requirement of the scan results to include an IP address that can exist in one of the repositories.  This script is a hack that will use a .nessus export from Tenable.sc to set the address and properties in a .nessus export from Tenable.io or Nessus.
+Tenable.sc does not support offline compliance scanning due to the requirement of the scan results to include an IP address that can exist in one of the repositories.  This script is a hack that will use a .nessus export from Tenable.sc to set the address and properties in a .nessus export from Tenable.io or Nessus.  It will also set the start and end properties for the host to be the time of running the script.
 
 This script is provided as-is to attempt to assist in importing audit results into Tenable.sc.
 
@@ -16,6 +16,7 @@ This script is provided as-is to attempt to assist in importing audit results in
 - python3 (may work on python2.7+, but didn't test)
 - .nessus file for template that contain results from a single target
 - .nessus file for source that contain results from a single offline target
+- Audit file used in offline must be selected or imported into SC for use and creation of plugins.
 
 ### Process
 
