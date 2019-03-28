@@ -8,6 +8,7 @@
 import argparse
 import datetime
 import os
+import re
 import sys
 
 import xml.etree.ElementTree as ET
@@ -137,9 +138,8 @@ def create_filename(source, override):
 
 
 def apply_values_to_nessus(contents, values):
-    date = datetime.datetime.now()
-    readable_date = date.strftime('%c')
-    unix_timestamp = date.strftime('%s')
+    start = datetime.datetime.now()
+    end = datetime.datetime.now() + datetime.timedelta(0,1)
 
     try:
         tree = ET.fromstring(contents)
@@ -159,23 +159,54 @@ def apply_values_to_nessus(contents, values):
             report_host.attrib['name'] = name
 
             old_props = report_host.find('HostProperties')
-            report_host.remove(old_props)
+            for tag in old_props.findall('tag'):
+                old_props.remove(tag)
 
             new_props = values[name]
             for tag in new_props.findall('tag'):
-                if 'TIMESTAMP' in tag.attrib['name']:
-                    tag.text = unix_timestamp
-                if tag.attrib['name'] in ('HOST_START', 'HOST_END'):
-                    tag.text = readable_date
-            report_host.append(new_props)
+                if tag.attrib['name'] == 'HOST_START_TIMESTAMP':
+                    tag.text = start.strftime('%s')
+                elif tag.attrib['name'] == 'HOST_END_TIMESTAMP':
+                    tag.text = end.strftime('%s')
+                elif tag.attrib['name'] == 'HOST_START':
+                    tag.text = start.strftime('%c')
+                elif tag.attrib['name'] == 'HOST_END':
+                    tag.text = end.strftime('%c')
+
+                old_props.append(tag)
 
     except Exception as e:
         display('ERROR: apply_values_to_nessus(): {}'.format(e), exit=1)
         sys.exit(1)
 
-    new_content = ET.tostring(tree, encoding='ascii', method='xml')
+    new_content = ET.tostring(tree, encoding='ascii', method='xml', short_empty_elements=False)
 
-    return new_content.decode('utf-8').replace('\\n', '\n')
+    nessus_content = sanitize_xml_to_nessus(new_content)
+
+    return nessus_content
+
+
+# Warning!!! hackish starts here... really bad.
+def sanitize_xml_to_nessus(source):
+    content = source.decode('utf-8')
+
+    # clean up xml
+    content = content.replace('\'1.0\' encoding=\'ascii\'', '"1.0" ')
+    content = content.replace(' xmlns:ns0="http://www.nessus.org/cm"', '')
+    content = content.replace('<ns0:', '<cm:')
+    content = content.replace('</ns0:', '</cm:')
+
+    content = re.sub('<(Report name="[^"]*")>', '<\\1 xmlns:cm="http://www.nessus.org/cm">', content)
+
+
+    # clean up character encoding
+    finds = re.findall('>([^<]+)<', content)
+    for value in finds:
+        replace = value.replace('\'', '&apos;')
+        replace = replace.replace('"', '&quot;')
+        content = content.replace('>' + value + '<', '>' + replace + '<')
+
+    return content
 
 
 if __name__ == '__main__':
