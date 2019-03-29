@@ -4,7 +4,7 @@
 
 The __offline_to_sc.py__ script is used to take the properties from a .nessus file and place them in a 2nd .nessus file to allow it to be imported into Tenable.sc.
 
-Tenable.sc does not support offline compliance scanning due to the requirement of the scan results to include an IP address that can exist in one of the repositories.  This script is a hack that will use a .nessus export from Tenable.sc to set the address and properties in a .nessus export from Tenable.io or Nessus.  It will also set the start and end properties for the host to be the time of running the script.
+Tenable.sc does not support offline compliance scanning due to the requirement of the scan results to include an IP address that can exist in one of the repositories.  This script is a hack that will use a .nessus export from Tenable.sc to set the address and properties in a .nessus export from Tenable.io or Nessus.  It will also set the start and end properties for the target to be the time of running the script.
 
 This script is provided as-is to attempt to assist in importing audit results into Tenable.sc.
 
@@ -20,8 +20,8 @@ This script is provided as-is to attempt to assist in importing audit results in
 
 ### Process
 
-- From Tenable.sc, find any scan results from the target that we want to use and export a .nessus to use as a template.
-- In Tenable.io or Nessus, run an offline compliance scan and export a .nessus of the results to use as a source.
+- In Tenable.sc, create a policy to accept the offline scan results.  The policy should be a Policy Compliance Template, with the same audit added to the policy.  Run a scan with this policy against the single IP address, which will produce no compliance results, but is setting it up to accept the offline compliance results.  Download the scan results to use as a template .nessus file.
+- In Tenable.io or Nessus, run an offline compliance scan and export a .nessus of the results to use as a source. Like the template .nessus, this scan will contain only a single result set to bind to the single asset from the template.
 - Run the command line python tool to create a new .nessus file for import.
     - `./offline_to_sc.py results_from_sc.nessus offline_results.nessus`
 - Import the new file into Tenable.sc.
