@@ -144,36 +144,50 @@ def apply_values_to_nessus(contents, values):
     try:
         tree = ET.fromstring(contents)
 
-        for name in values:
-            display('Apply values: {}'.format(name), verbose=True)
+        name = None
+        prefs = tree.findall('Policy/Preferences/PluginsPreferences/item')
+        for pref in prefs:
+            pref_name = pref.find('preferenceName').text
+            pref_selected = pref.find('selectedValue').text
+            if 'Offline config file' in pref_name and pref_selected:
+                name = pref_selected
+
+        if not name:
+            raise Exception('Unable to find the config name.')
+
+        for host in values:
+            display('Apply values: {}'.format(host), verbose=True)
 
             # update TARGET preference
             preferences = tree.find('Policy/Preferences/ServerPreferences')
             for preference in preferences.findall('preference'):
                 if preference.find('name').text == 'TARGET':
                     old = preference.find('value').text
-                    preference.find('value').text = name
+                    preference.find('value').text = host
                     break
 
-            report_host = tree.find('Report/ReportHost')
-            report_host.attrib['name'] = name
+            report_hosts = tree.findall('Report/ReportHost')
+            for report_host in report_hosts:
+                report_name = report_host.attrib['name']
+                if report_name == name:
+                    report_host.attrib['name'] = host
 
-            old_props = report_host.find('HostProperties')
-            for tag in old_props.findall('tag'):
-                old_props.remove(tag)
+                    old_props = report_host.find('HostProperties')
+                    for tag in old_props.findall('tag'):
+                        old_props.remove(tag)
 
-            new_props = values[name]
-            for tag in new_props.findall('tag'):
-                if tag.attrib['name'] == 'HOST_START_TIMESTAMP':
-                    tag.text = start.strftime('%s')
-                elif tag.attrib['name'] == 'HOST_END_TIMESTAMP':
-                    tag.text = end.strftime('%s')
-                elif tag.attrib['name'] == 'HOST_START':
-                    tag.text = start.strftime('%c')
-                elif tag.attrib['name'] == 'HOST_END':
-                    tag.text = end.strftime('%c')
+                    new_props = values[host]
+                    for tag in new_props.findall('tag'):
+                        if tag.attrib['name'] == 'HOST_START_TIMESTAMP':
+                            tag.text = start.strftime('%s')
+                        elif tag.attrib['name'] == 'HOST_END_TIMESTAMP':
+                            tag.text = end.strftime('%s')
+                        elif tag.attrib['name'] == 'HOST_START':
+                            tag.text = start.strftime('%c')
+                        elif tag.attrib['name'] == 'HOST_END':
+                            tag.text = end.strftime('%c')
 
-                old_props.append(tag)
+                        old_props.append(tag)
 
     except Exception as e:
         display('ERROR: apply_values_to_nessus(): {}'.format(e), exit=1)
