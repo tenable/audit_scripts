@@ -15,11 +15,12 @@ import sys
 import xml.etree.ElementTree as ET
 
 regexes = {
-  'scon': re.compile('^\s*<condition\s+type\s*:\s*["\'](and|or)["\']\s*>\s*$'),
-  'econ': re.compile('^\s*</condition\s*>\s*$'),
-  'sitem': re.compile('^\s*<(item|custom_item)>\s*$'),
-  'eitem': re.compile('^\s*</(item|custom_item)>\s*$'),
-  'desc': re.compile('^(\s*)description\s*:.*$')
+  'scon': re.compile('^[\s\t]*<condition[\s\t]+type[\s\t]*:[\s\t]*["\'](and|or)["\'][\s\t]*>[\s\t]*$'),
+  'econ': re.compile('^[\s\t]*</condition[\s\t]*>[\s\t]*$'),
+  'sitem': re.compile('^[\s\t]*<(item|custom_item)>[\s\t]*$'),
+  'eitem': re.compile('^[\s\t]*</(item|custom_item)>[\s\t]*$'),
+  'desc': re.compile('^([\s\t]*)description[\s\t]*:.*$'),
+  'ctype': re.compile('^[\s\t]*<[\s\t]*check_type[\s\t]*:[\s\t]*"([^"]*)"[\s\t>]', re.M)
 }
 
 no_value = '__ObNoXiOuS_StRiNg_ThAt_ShOuLd_NoT_ExIsT__'
@@ -166,10 +167,39 @@ def strip_quotes(target):
         return target
 
 
+def get_plugin_from_contents(contents):
+    global regexes
+    plugin = 'Generic'
+
+    if not isinstance(contents, str):
+        return plugin
+
+    matches = regexes['ctype'].findall(contents)
+    if len(matches) == 1:
+        plugin = matches[0]
+
+    return plugin
+
+
+def quote_and_escape_value(source, plugin):
+
+    if not isinstance(source, str):
+        return source
+
+    if '"' in source and "'" not in source and not plugin in ('Unix',):
+        value = "'{}'".format(source)
+    else:
+        value = '"{}"'.format(source.replace('"', '\\"'))
+
+    return value
+
+
 def apply_values_to_audit(filename, contents, values):
     global regexes
 
     audits = {}
+
+    plugin = get_plugin_from_contents(contents)
 
     lines = contents.split('\n')
     for host in values:
@@ -193,19 +223,7 @@ def apply_values_to_audit(filename, contents, values):
 
             elif regexes['eitem'].match(line):
                 if not known_good == '':
-                    value = known_good
-                    if '"' in known_good and "'" not in known_good:
-                        value = "'{}'".format(known_good)
-                    elif '"' not in known_good and "'" in known_good:
-                        value = '"{}"'.format(known_good)
-                    elif '"' not in known_good and "'" not in known_good:
-                        value = '"{}"'.format(known_good)
-                    elif '"' in known_good and "'" in known_good:
-                        value = '"{}"'.format(known_good.replace('"', '\\"'))
-                    else:
-                        display('ERROR: Unhandled value: {}'.format(value),
-                                exit=1)
-
+                    value = quote_and_escape_value(known_good, plugin)
                     new_line = '{}known_good : {}'.format(space, value)
                     audit_lines.append(new_line)
                 known_good = ''

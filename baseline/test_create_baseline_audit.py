@@ -9,6 +9,8 @@ from create_baseline_audit import create_filename
 from create_baseline_audit import strip_quotes
 from create_baseline_audit import get_values_from_nessus
 from create_baseline_audit import apply_values_to_audit
+from create_baseline_audit import get_plugin_from_contents
+from create_baseline_audit import quote_and_escape_value
 
 # variables imported for testing only
 from create_baseline_audit import show_time
@@ -276,12 +278,12 @@ def test_apply_values_to_audit_multiple_hosts():
 
 
 def test_apply_values_to_audit_quoted_values():
-    test_content = ('<check_type:"Unix">\n'
+    test_content = ('<check_type:"Cisco">\n'
                     '<custom_item>\n'
                     '  description: "Test value one"\n'
                     '</custom_item>\n'
                     '</check_type>')
-    expected_content = ('<check_type:"Unix">\n'
+    expected_content = ('<check_type:"Cisco">\n'
                         '<custom_item>\n'
                         '  description: "Test value one"\n'
                         '  known_good : __VAL__\n'
@@ -298,6 +300,30 @@ def test_apply_values_to_audit_quoted_values():
         test_expected = expected_content.replace('__VAL__', expected_value)
         expected = {'abc.192.168.0.10.audit': test_expected}
         assert actual == expected
+
+
+def test_get_plugin_from_contents():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+
+    assert get_plugin_from_contents(None) == 'Generic'
+    assert get_plugin_from_contents('') == 'Generic'
+    assert get_plugin_from_contents(test_content) == 'Unix'
+    assert get_plugin_from_contents('\n < check_type : "Windows" version : "2">') == 'Windows'
+    assert get_plugin_from_contents('<check_type	:	"Cisco">') == 'Cisco'
+
+
+def test_quote_and_escape_value():
+    assert quote_and_escape_value(None, None) == None
+    assert quote_and_escape_value('', None) == '""'
+    assert quote_and_escape_value('abc', None) == '"abc"'
+    assert quote_and_escape_value("a'bc", None) == '"a\'bc"'
+    assert quote_and_escape_value("a\"bc", None) == "'a\"bc'"
+    assert quote_and_escape_value("a\"bc", 'Windows') == "'a\"bc'"
+    assert quote_and_escape_value("a\"bc", 'Unix') == '"a\\"bc"'
 
 
 if __name__ == '__main__':
