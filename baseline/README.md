@@ -32,7 +32,9 @@ There are a number of use cases that this could be used for.
 ### Usage
 
 ```
-usage: create_baseline_audit.py [-h] [-t] [-v] [-o] [-f FILENAME] audit nessus
+usage: create_baseline_audit.py [-h] [-t] [-v] [-o] [-f FILENAME]
+                                [-r REFERENCE]
+                                audit nessus
 
 Read audit file and nessus file and create a new baseline audit based on known
 good values.
@@ -48,9 +50,13 @@ optional arguments:
   -o, --overwrite       overwrite output file if it exists
   -f FILENAME, --filename FILENAME
                         override filename of output file
+  -r REFERENCE, --reference REFERENCE
+                        add reference tag to identify deviations
 ```
 
 Options exist that allow the overwriting of the resulting audit, naming the resulting audit (when only one host is scanned), and providing more verbose output.
+
+The optional `--reference` option will add a reference item to each check that identifies if the check would be compliant with the original audit, deviates from the original audit, or should be reviewed.
 
 ### Example Run
 
