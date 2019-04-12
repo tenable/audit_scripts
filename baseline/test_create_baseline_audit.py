@@ -11,6 +11,7 @@ from create_baseline_audit import get_values_from_nessus
 from create_baseline_audit import apply_values_to_audit
 from create_baseline_audit import get_plugin_from_contents
 from create_baseline_audit import quote_and_escape_value
+from create_baseline_audit import format_reference
 
 # variables imported for testing only
 from create_baseline_audit import show_time
@@ -233,6 +234,65 @@ def test_apply_values_to_audit_simple_content_and_values():
     assert actual == expected
 
 
+def test_apply_values_to_audit_simple_content_and_values_with_ref():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+    expected_content = ('<check_type:"Unix">\n'
+                        '<custom_item>\n'
+                        '  description: "Test value one"\n'
+                        '  reference : "ABC|compliant"\n'
+                        '  known_good : "0"\n'
+                        '</custom_item>\n'
+                        '</check_type>')
+    test_values = { '192.168.0.10': { 'Test value one': ('0', 'PASSED') }}
+    actual = apply_values_to_audit('abc.audit', test_content, test_values, 'ABC')
+    expected = {'abc.192.168.0.10.audit': expected_content}
+    assert actual == expected
+
+
+def test_apply_values_to_audit_simple_content_and_values_with_add_ref():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '  reference : "800-53|CM-7"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+    expected_content = ('<check_type:"Unix">\n'
+                        '<custom_item>\n'
+                        '  description: "Test value one"\n'
+                        '  reference : "800-53|CM-7,ABC|compliant"\n'
+                        '  known_good : "0"\n'
+                        '</custom_item>\n'
+                        '</check_type>')
+    test_values = { '192.168.0.10': { 'Test value one': ('0', 'PASSED') }}
+    actual = apply_values_to_audit('abc.audit', test_content, test_values, 'ABC')
+    expected = {'abc.192.168.0.10.audit': expected_content}
+    assert actual == expected
+
+
+def test_apply_values_to_audit_simple_content_and_values_with_replace_ref():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '  reference : "ABC|deviation,800-53|CM-7"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+    expected_content = ('<check_type:"Unix">\n'
+                        '<custom_item>\n'
+                        '  description: "Test value one"\n'
+                        '  reference : "ABC|compliant,800-53|CM-7"\n'
+                        '  known_good : "0"\n'
+                        '</custom_item>\n'
+                        '</check_type>')
+    test_values = { '192.168.0.10': { 'Test value one': ('0', 'PASSED') }}
+    actual = apply_values_to_audit('abc.audit', test_content, test_values, 'ABC')
+    expected = {'abc.192.168.0.10.audit': expected_content}
+    assert actual == expected
+
+
 def test_apply_values_to_audit_multiple_known_goods():
     test_content = ('<check_type:"Unix">\n'
                     '<custom_item>\n'
@@ -249,6 +309,27 @@ def test_apply_values_to_audit_multiple_known_goods():
                         '</check_type>')
     test_values = { '192.168.0.10': { 'Test value one': ('1', 'PASSED') }}
     actual = apply_values_to_audit('abc.audit', test_content, test_values)
+    expected = {'abc.192.168.0.10.audit': expected_content}
+    assert actual == expected
+
+
+def test_apply_values_to_audit_multiple_known_goods_with_ref():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '  known_good : "0"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+    expected_content = ('<check_type:"Unix">\n'
+                        '<custom_item>\n'
+                        '  description: "Test value one"\n'
+                        '  known_good : "0"\n'
+                        '  reference : "ABC|deviation"\n'
+                        '  known_good : "1"\n'
+                        '</custom_item>\n'
+                        '</check_type>')
+    test_values = { '192.168.0.10': { 'Test value one': ('1', 'FAILED') }}
+    actual = apply_values_to_audit('abc.audit', test_content, test_values, 'ABC')
     expected = {'abc.192.168.0.10.audit': expected_content}
     assert actual == expected
 
@@ -270,6 +351,31 @@ def test_apply_values_to_audit_multiple_hosts():
         '192.168.0.11': { 'Test value one': ('1', 'PASSED') }
     }
     actual = apply_values_to_audit('abc.audit', test_content, test_values)
+    expected = {
+        'abc.192.168.0.10.audit': expected_content.replace('__VAL__', '0'),
+        'abc.192.168.0.11.audit': expected_content.replace('__VAL__', '1')
+    }
+    assert actual == expected
+
+
+def test_apply_values_to_audit_multiple_hosts_with_ref():
+    test_content = ('<check_type:"Unix">\n'
+                    '<custom_item>\n'
+                    '  description: "Test value one"\n'
+                    '</custom_item>\n'
+                    '</check_type>')
+    expected_content = ('<check_type:"Unix">\n'
+                        '<custom_item>\n'
+                        '  description: "Test value one"\n'
+                        '  reference : "ABC|compliant"\n'
+                        '  known_good : "__VAL__"\n'
+                        '</custom_item>\n'
+                        '</check_type>')
+    test_values = {
+        '192.168.0.10': { 'Test value one': ('0', 'PASSED') },
+        '192.168.0.11': { 'Test value one': ('1', 'PASSED') }
+    }
+    actual = apply_values_to_audit('abc.audit', test_content, test_values, 'ABC')
     expected = {
         'abc.192.168.0.10.audit': expected_content.replace('__VAL__', '0'),
         'abc.192.168.0.11.audit': expected_content.replace('__VAL__', '1')
@@ -300,6 +406,13 @@ def test_apply_values_to_audit_quoted_values():
         test_expected = expected_content.replace('__VAL__', expected_value)
         expected = {'abc.192.168.0.10.audit': test_expected}
         assert actual == expected
+
+
+def test_format_reference():
+    assert format_reference('PASSED', 'a') == 'a|compliant'
+    assert format_reference('WARNING', 'b') == 'b|review'
+    assert format_reference('FAILED', 'c') == 'c|deviation'
+    assert format_reference('SPAM', 'd') == 'd|review'
 
 
 def test_get_plugin_from_contents():
