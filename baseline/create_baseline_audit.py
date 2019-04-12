@@ -134,13 +134,16 @@ def get_values_from_nessus(contents):
                 for item in host.findall('ReportItem'):
                     description = ''
                     value = no_value
+                    result = no_value
                     for child in item:
                         if 'compliance-check-name' in child.tag:
                             description = child.text.strip()
                         elif 'compliance-actual-value' in child.tag:
                             value = child.text
-                    if description and value != no_value:
-                        values[hostname][description] = value
+                        if 'compliance-result' in child.tag:
+                            result = child.text.strip()
+                    if description and value != no_value and result != no_value:
+                        values[hostname][description] = (value, result)
     except Exception as e:
         display('ERROR: parsing nessus file: {}'.format(e), exit=1)
         sys.exit(1)
@@ -208,6 +211,7 @@ def apply_values_to_audit(filename, contents, values):
         audit_lines = []
         in_condition = False
         in_item = False
+        result = None
         known_good = ''
         space = ''
 
@@ -235,7 +239,8 @@ def apply_values_to_audit(filename, contents, values):
                 stripped = strip_quotes(description)
 
                 if stripped in values[host]:
-                    known_good = values[host][stripped]
+                    known_good = values[host][stripped][0]
+                    result = values[host][stripped][1]
                     space = regexes['desc'].findall(line)[0]
 
             audit_lines.append(line)

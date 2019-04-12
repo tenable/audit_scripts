@@ -26,9 +26,9 @@ from create_baseline_audit import show_verbose
 test_items = [
     '<spam>',
     '<ReportItem port="0" svc_name="general" protocol="tcp" severity="3" pluginID="21156" pluginName="Windows Compliance Checks" pluginFamily="Policy Compliance">\n<agent>windows</agent>\n<compliance>true</compliance>\n<fname>compliance_check.nbin</fname>\n<plugin_modification_date>2018/06/21</plugin_modification_date>\n<plugin_name>Windows Compliance Checks</plugin_name>\n<plugin_publication_date>2007/11/21</plugin_publication_date>\n<plugin_type>local</plugin_type>\n<risk_factor>None</risk_factor>\n<script_version>$Revision: 1.305 $</script_version>\n<cm:compliance-check-name>Test value one</cm:compliance-check-name>\n<cm:compliance-actual-value>0</cm:compliance-actual-value>\n<description>&quot;Test value one&quot;: [FAILED]\n</description>\n<cm:compliance-audit-file>CIS_MS_Windows_7_L1_v3.0.1.var_replace.audit</cm:compliance-audit-file>\n<cm:compliance-check-id>993c788cf6b875e558ea4d65476dc71e</cm:compliance-check-id>\n<cm:compliance-policy-value>[24..4294967295]</cm:compliance-policy-value>\n<cm:compliance-info>\nAbridged compliance\ninformation here</cm:compliance-info>\n<cm:compliance-result>FAILED</cm:compliance-result>\n<cm:compliance-reference>800-171|3.5.8,800-53|IA-5</cm:compliance-reference>\n<cm:compliance-solution>Abridged compliance\nsolution here</cm:compliance-solution>\n<cm:compliance-see-also>https://benchmarks.cisecurity.org/tools2/windows/CIS_Microsoft_Windows_7_Workstation_Benchmark_v3.0.1.pdf</cm:compliance-see-also>\n</ReportItem>',
-    '<ReportItem>\n<cm:compliance-check-name>Test value two</cm:compliance-check-name>\n<cm:compliance-actual-value>0</cm:compliance-actual-value>\n</ReportItem>',
-    '<ReportItem>\n<cm:compliance-check-name>Test value three</cm:compliance-check-name>\n<cm:compliance-actual-value>This is\nmulti-line</cm:compliance-actual-value>\n</ReportItem>',
-    '<ReportItem>\n<cm:compliance-check-name>Test value two for 2nd host</cm:compliance-check-name>\n<cm:compliance-actual-value>1</cm:compliance-actual-value>\n</ReportItem>'
+    '<ReportItem>\n<cm:compliance-check-name>Test value two</cm:compliance-check-name>\n<cm:compliance-result>FAILED</cm:compliance-result><cm:compliance-actual-value>0</cm:compliance-actual-value>\n</ReportItem>',
+    '<ReportItem>\n<cm:compliance-check-name>Test value three</cm:compliance-check-name>\n<cm:compliance-result>PASSED</cm:compliance-result><cm:compliance-actual-value>This is\nmulti-line</cm:compliance-actual-value>\n</ReportItem>',
+    '<ReportItem>\n<cm:compliance-check-name>Test value two for 2nd host</cm:compliance-check-name>\n<cm:compliance-result>WARNING</cm:compliance-result><cm:compliance-actual-value>1</cm:compliance-actual-value>\n</ReportItem>'
 ]
 
 
@@ -146,7 +146,7 @@ def test_get_values_from_nessus_single_item():
     values = generate_test_content({'192.168.0.10': (1,)})
     assert get_values_from_nessus(values) == {
         '192.168.0.10': {
-            'Test value one': '0'
+            'Test value one': ('0', 'FAILED')
         }
     }
 
@@ -155,7 +155,7 @@ def test_get_values_from_nessus_bare_bones_report_item():
     values = generate_test_content({'192.168.0.10': (2,)})
     assert get_values_from_nessus(values) == {
         '192.168.0.10': {
-            'Test value two': '0'
+            'Test value two': ('0', 'FAILED')
         }
     }
 
@@ -164,8 +164,8 @@ def test_get_values_from_nessus_multiple_values():
     values = generate_test_content({'192.168.0.10': (1, 2)})
     assert get_values_from_nessus(values) == {
         '192.168.0.10': {
-            'Test value one': '0',
-            'Test value two': '0',
+            'Test value one': ('0', 'FAILED'),
+            'Test value two': ('0', 'FAILED')
         }
     }
 
@@ -177,10 +177,10 @@ def test_get_values_from_nessus_multiple_hosts():
     })
     assert get_values_from_nessus(values) == {
         '192.168.0.10': {
-            'Test value two': '0'
+            'Test value two': ('0', 'FAILED')
         },
         '192.168.0.11': {
-            'Test value two for 2nd host': '1'
+            'Test value two for 2nd host': ('1', 'WARNING')
         }
     }
 
@@ -189,7 +189,7 @@ def test_get_values_from_nessus_value_with_newline():
     values = generate_test_content({'192.168.0.10': (3,)})
     assert get_values_from_nessus(values) == {
         '192.168.0.10': {
-            'Test value three': 'This is\nmulti-line'
+            'Test value three': ('This is\nmulti-line', 'PASSED')
         }
     }
 
@@ -199,7 +199,7 @@ def test_apply_values_to_audit_no_content_or_values():
 
 
 def test_apply_values_to_audit_no_content():
-    test_values = { '192.168.0.10': { 'Test value one': '0' }}
+    test_values = { '192.168.0.10': { 'Test value one': ('0', 'PASSED') }}
     expected = {'abc.192.168.0.10.audit': ''}
     assert apply_values_to_audit('abc.audit', '', test_values) == expected
 
@@ -227,7 +227,7 @@ def test_apply_values_to_audit_simple_content_and_values():
                         '  known_good : "0"\n'
                         '</custom_item>\n'
                         '</check_type>')
-    test_values = { '192.168.0.10': { 'Test value one': '0' }}
+    test_values = { '192.168.0.10': { 'Test value one': ('0', 'PASSED') }}
     actual = apply_values_to_audit('abc.audit', test_content, test_values)
     expected = {'abc.192.168.0.10.audit': expected_content}
     assert actual == expected
@@ -247,7 +247,7 @@ def test_apply_values_to_audit_multiple_known_goods():
                         '  known_good : "1"\n'
                         '</custom_item>\n'
                         '</check_type>')
-    test_values = { '192.168.0.10': { 'Test value one': '1' }}
+    test_values = { '192.168.0.10': { 'Test value one': ('1', 'PASSED') }}
     actual = apply_values_to_audit('abc.audit', test_content, test_values)
     expected = {'abc.192.168.0.10.audit': expected_content}
     assert actual == expected
@@ -266,8 +266,8 @@ def test_apply_values_to_audit_multiple_hosts():
                         '</custom_item>\n'
                         '</check_type>')
     test_values = {
-        '192.168.0.10': { 'Test value one': '0' },
-        '192.168.0.11': { 'Test value one': '1' }
+        '192.168.0.10': { 'Test value one': ('0', 'PASSED') },
+        '192.168.0.11': { 'Test value one': ('1', 'PASSED') }
     }
     actual = apply_values_to_audit('abc.audit', test_content, test_values)
     expected = {
@@ -290,10 +290,10 @@ def test_apply_values_to_audit_quoted_values():
                         '</custom_item>\n'
                         '</check_type>')
     test_values = [
-        [{ '192.168.0.10': { 'Test value one': 'ab"cd' }}, '\'ab"cd\''],
-        [{ '192.168.0.10': { 'Test value one': "ab'cd" }}, '"ab\'cd"'],
-        [{ '192.168.0.10': { 'Test value one': 'abcd' }}, '"abcd"'],
-        [{ '192.168.0.10': { 'Test value one': 'a"bc\'"d' }}, '"a\\"bc\'\\"d"']
+        [{ '192.168.0.10': { 'Test value one': ('ab"cd', 'PASSED') }}, '\'ab"cd\''],
+        [{ '192.168.0.10': { 'Test value one': ("ab'cd", 'PASSED') }}, '"ab\'cd"'],
+        [{ '192.168.0.10': { 'Test value one': ('abcd', 'PASSED') }}, '"abcd"'],
+        [{ '192.168.0.10': { 'Test value one': ('a"bc\'"d', 'PASSED') }}, '"a\\"bc\'\\"d"']
     ]
     for (test_value, expected_value) in test_values:
         actual = apply_values_to_audit('abc.audit', test_content, test_value)
