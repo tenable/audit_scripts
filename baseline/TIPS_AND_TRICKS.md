@@ -8,8 +8,8 @@ Some of the factors include:
 
 - Some checks in the audit are a direct report of a certain result, most notably with WARNING/medium.  If the item in the audit is a report WARNING, it can not change in the baseline audit.  If the audit is a Tenable published audit, these items can generally be identified by having a "NOTE:" in the description that the check was not run. The code inside the audit will have the opening tag being similar to `<report type:"WARNING">`.
 - Audits can contain conditional logic that will provide results based on a setting on the target being scanned.  When rescanning the "gold image" system with a baseline audit, the same conditional logic should work, and the results should become a PASSED/info.  But when scanning other hosts, they may take a different conditional path that can provide results that were not present in the original "gold image" results.
-- If the output of an audit check has dynamic data in it, such as timestamps, a known good value of a baseline will not work.  This is due to the output with a time stamp will change with every execution of the scan, and thus would not match the baseline run.
-- When creating a baseline audit, the original range or regular expression is now abandoned and an absolute value is now used.  This could be that the benchmark accepted a password length of anything over 8 characters, but the "gold image" had 7 characters set.  The baseline audit will fail on anything that is not 7 characters.  This can be adjusted by adding more known good values, but in the end, it will be looking for absolute values.
+- If the output of an audit check includes dynamic data, such as timestamps, a known good value of a baseline will not work. Since the value of a time stamp will change with every execution of the scan matches against the static known good will fail.
+- When creating a baseline audit, the original range or regular expression is now abandoned and an absolute value is used in it's place. An example would be a benchmark that accepted a password length of greater than 8 characters, the "gold image" had 7 characters set. The new baseline audit will fail on anything that is not exactly 7 characters. This can be adjusted by adding more known good values, but the end result will always be an audit looking for absolute values.
 
 
 ## Getting the Source Audit
@@ -20,7 +20,7 @@ If using a custom audit, having access to the source is not an issue.
 
 If you want to use a Tenable or other third party audit, the original method was to get the source audit from a download site, customize it with the organizations policy values, and treat it as a custom audit when scanning.  The requirement to verify the custom policy values adds overhead and possibilties for missing values, or mis-typing values.
 
-As of March of 2019, a debug opotion was enable that allows the source audit to be presented in the Debugging Log Report.  With this, you can run the "gold image" scan using any audit file and enabling Debug Plugin option in the policy.  When the results are done, the source audit can be saved out of the Debugging Log Report.  The only modification that must be done is to remove the first line in the file as it contains a timestamp.
+As of March of 2019, a debug option was enabled that allows the source audit to be presented in the Debugging Log Report.  With this, you can run the "gold image" scan using any audit file and enabling Debug Plugin option in the policy.  When the results are done, the source audit can be saved out of the Debugging Log Report.  The only modification that must be done is to remove the first line in the file as it contains a timestamp.
 
 
 ## Custom Audit Content
