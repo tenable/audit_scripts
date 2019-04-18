@@ -27,7 +27,7 @@ As of March of 2019, a debug option was enabled that allows the source audit to 
 
 When creating a custom audit for use as a baseline, the following tips will help get quality results:
 
-* Make the audit relatively flat and uses few to no conditionals.  Conditionals may change the results presented on different targets.
+* Make the audit relatively flat and use few to no conditionals.  Conditionals may change the results presented on different targets.
 * Use items that provide computed results and not static reports.  Static reports will never change results.
 * Create results that do not contain time based output.  If a time stamp shows in the results, it is virtually impossible to create a known good value.
 * If creating a custom audit item using a command (CMD_EXEC, AUDIT_POWERSHELL), make sure the output is consistently generated.  This tends to mean that all output should be sorted.  If the output comes out in a random order, the baseline will not have a consistent known good to compare with.
