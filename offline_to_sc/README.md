@@ -20,7 +20,7 @@ This script is provided as-is to attempt to assist in importing audit results in
 
 ### Process
 
-- In Tenable.sc, create a policy to accept the offline scan results.  The policy should be a Policy Compliance Template, with the same audit added to the policy.  Run a scan with this policy against the single IP address, which will produce no compliance results, but is setting it up to accept the offline compliance results.  Download the scan results to use as a template .nessus file.
+- In Tenable.sc, create a policy to accept the offline scan results.  The policy should be a Policy Compliance Template, with the same audit added to the policy.  Run a scan with this policy against the single IP address, which will produce no compliance results, but may have vulnerabilty or detection results.  This scan is setting up Tenable.sc to accept the offline compliance results.  Download the scan results to use as a template .nessus file.
 - In Tenable.io or Nessus, run an offline compliance scan and export a .nessus of the results to use as a source. Like the template .nessus, this scan will contain only a single result set to bind to the single asset from the template.
 - Run the command line python tool to create a new .nessus file for import.
     - `./offline_to_sc.py results_from_sc.nessus offline_results.nessus`

@@ -121,6 +121,8 @@ def get_host_properties_from_nessus(contents):
         display('ERROR: get_host_properties_from_nessus(): {}'.format(e), exit=1)
         sys.exit(1)
 
+    display('Host Name: {}'.format(name), verbose=True)
+
     return values
 
 
@@ -169,7 +171,9 @@ def apply_values_to_nessus(contents, values):
             report_hosts = tree.findall('Report/ReportHost')
             for report_host in report_hosts:
                 report_name = report_host.attrib['name']
-                if report_name == name:
+                display('Analyzing report: {}'.format(report_name), verbose=True)
+                if report_name.lower() == name.lower():
+                    display('Found report name: {}'.format(name), verbose=True)
                     report_host.attrib['name'] = host
 
                     old_props = report_host.find('HostProperties')
