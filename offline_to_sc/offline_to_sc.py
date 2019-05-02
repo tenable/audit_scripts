@@ -139,6 +139,11 @@ def create_filename(source, override):
     return filename
 
 
+def unixtime(date):
+    epoch = datetime.datetime(1970,1,1)
+    return (date - epoch).total_seconds()
+
+
 def apply_values_to_nessus(contents, values):
     start = datetime.datetime.now()
     end = datetime.datetime.now() + datetime.timedelta(0,1)
@@ -183,9 +188,9 @@ def apply_values_to_nessus(contents, values):
                     new_props = values[host]
                     for tag in new_props.findall('tag'):
                         if tag.attrib['name'] == 'HOST_START_TIMESTAMP':
-                            tag.text = start.strftime('%s')
+                            tag.text = str(unixtime(start))
                         elif tag.attrib['name'] == 'HOST_END_TIMESTAMP':
-                            tag.text = end.strftime('%s')
+                            tag.text = str(unixtime(end))
                         elif tag.attrib['name'] == 'HOST_START':
                             tag.text = start.strftime('%c')
                         elif tag.attrib['name'] == 'HOST_END':
