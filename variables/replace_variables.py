@@ -177,9 +177,9 @@ def replace_variable_values(content, variables):
     return '\n'.join(lines)
 
 
-def output_audit(content, output_file=[], overwrite=False):
+def output_audit(content, output_file, overwrite=False):
     if output_file:
-        write_file(output_file[0], content, overwrite)
+        write_file(output_file, content, overwrite)
     else:
         print(content)
 
