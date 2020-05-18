@@ -15,15 +15,15 @@ import sys
 import xml.etree.ElementTree as ET
 
 regexes = {
-  'scon': re.compile('^[\s\t]*<condition[\s\t]+type[\s\t]*:[\s\t]*["\'](and|or)["\'][\s\t]*>[\s\t]*$'),
-  'econ': re.compile('^[\s\t]*</condition[\s\t]*>[\s\t]*$'),
-  'sitem': re.compile('^[\s\t]*<(item|custom_item)>[\s\t]*$'),
-  'eitem': re.compile('^[\s\t]*</(item|custom_item)>[\s\t]*$'),
-  'desc': re.compile('^([\s\t]*)description[\s\t]*:.*$'),
+  'scon': re.compile('^[ \t]*<condition[ \t]+type[ \t]*:[ \t]*["\'](and|or)["\'][ \t]*>[ \t]*$'),
+  'econ': re.compile('^[ \t]*</condition[ \t]*>[ \t]*$'),
+  'sitem': re.compile('^[ \t]*<(item|custom_item)>[ \t]*$'),
+  'eitem': re.compile('^[ \t]*</(item|custom_item)>[ \t]*$'),
+  'desc': re.compile('^([ \t]*)description[ \t]*:.*$'),
   'ref_arg': re.compile('^[A-Za-z0-9_-]+$'),
-  'ref': re.compile('^([\s\t]*)reference[\s\t]*:.*$'),
-  'kg': re.compile('^([\s\t]*)known_good[\s\t]*:.*$'),
-  'ctype': re.compile('^[\s\t]*<[\s\t]*check_type[\s\t]*:[\s\t]*"([^"]*)"[\s\t>]', re.M)
+  'ref': re.compile('^([ \t]*)reference[ \t]*:.*$'),
+  'kg': re.compile('^([ \t]*)known_good[ \t]*:.*$'),
+  'ctype': re.compile('^[ \t]*<[ \t]*check_type[ \t]*:[ \t]*"([^"]*)"[ \t>]', re.M)
 }
 
 no_value = '__ObNoXiOuS_StRiNg_ThAt_ShOuLd_NoT_ExIsT__'
