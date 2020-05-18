@@ -11,9 +11,9 @@ import re
 import sys
 
 regexes = {
-  'vars': re.compile('^\s*#\s*<variable>.*?^\s*#\s*</variable>', re.M|re.S),
-  'name': re.compile('^\s*#\s*<name>(.*?)</name>', re.M),
-  'dflt': re.compile('^\s*#\s*<default>(.*?)</default>', re.M)
+  'vars': re.compile('^[ \t]*#[ \t]*<variable>.*?^[ \t]*#[ \t]*</variable>', re.M|re.S),
+  'name': re.compile('^[ \t]*#[ \t]*<name>(.*?)</name>', re.M),
+  'dflt': re.compile('^[ \t]*#[ \t]*<default>(.*?)</default>', re.M)
 }
 
 show_verbose = False
@@ -163,7 +163,7 @@ def replace_variable_values(content, variables):
             remove = []
             for n in range(len(old)):
                 field = old[n]['field']
-                if re.match('^\s*' + field + '\s*:', line):
+                if re.match('^[ \t]*' + field + '[ \t]*:', line):
                     old_val = old[n]['value']
                     new_val = variables[old[n]['name']]
                     line = line.replace(old_val, new_val)

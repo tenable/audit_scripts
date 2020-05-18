@@ -10,9 +10,9 @@ import re
 import sys
 
 regexes = {
-  'open': re.compile('^\s*<(item|custom_item|report|if|then|else|condition)[\s>]'),
-  'close': re.compile('^\s*</(item|custom_item|report|if|then|else|condition)[\s>]'),
-  'description': re.compile('^\s*description\s*:\s*["\']')
+  'open': re.compile('^[ \t]*<(item|custom_item|report|if|then|else|condition)[ \t>]'),
+  'close': re.compile('^[ \t]*</(item|custom_item|report|if|then|else|condition)[ \t>]'),
+  'description': re.compile('^[ \t]*description[ \t]*:[ \t]*["\']')
 }
 
 show_verbose = False

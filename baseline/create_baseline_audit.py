@@ -15,12 +15,15 @@ import sys
 import xml.etree.ElementTree as ET
 
 regexes = {
-  'scon': re.compile('^[\s\t]*<condition[\s\t]+type[\s\t]*:[\s\t]*["\'](and|or)["\'][\s\t]*>[\s\t]*$'),
-  'econ': re.compile('^[\s\t]*</condition[\s\t]*>[\s\t]*$'),
-  'sitem': re.compile('^[\s\t]*<(item|custom_item)>[\s\t]*$'),
-  'eitem': re.compile('^[\s\t]*</(item|custom_item)>[\s\t]*$'),
-  'desc': re.compile('^([\s\t]*)description[\s\t]*:.*$'),
-  'ctype': re.compile('^[\s\t]*<[\s\t]*check_type[\s\t]*:[\s\t]*"([^"]*)"[\s\t>]', re.M)
+  'scon': re.compile('^[ \t]*<condition[ \t]+type[ \t]*:[ \t]*["\'](and|or)["\'][ \t]*>[ \t]*$'),
+  'econ': re.compile('^[ \t]*</condition[ \t]*>[ \t]*$'),
+  'sitem': re.compile('^[ \t]*<(item|custom_item)>[ \t]*$'),
+  'eitem': re.compile('^[ \t]*</(item|custom_item)>[ \t]*$'),
+  'desc': re.compile('^([ \t]*)description[ \t]*:.*$'),
+  'ref_arg': re.compile('^[A-Za-z0-9_-]+$'),
+  'ref': re.compile('^([ \t]*)reference[ \t]*:.*$'),
+  'kg': re.compile('^([ \t]*)known_good[ \t]*:.*$'),
+  'ctype': re.compile('^[ \t]*<[ \t]*check_type[ \t]*:[ \t]*"([^"]*)"[ \t>]', re.M)
 }
 
 no_value = '__ObNoXiOuS_StRiNg_ThAt_ShOuLd_NoT_ExIsT__'
@@ -29,7 +32,7 @@ show_time = False
 
 
 def parse_args(parameters):
-    global show_time, show_verbose
+    global show_time, show_verbose, regexes
 
     parser = argparse.ArgumentParser(description=('Read audit file and nessus '
                                                   'file and create a new '
@@ -45,6 +48,8 @@ def parse_args(parameters):
                         help='overwrite output file if it exists')
     parser.add_argument('-f', '--filename', nargs=1, default='',
                         help='override filename of output file')
+    parser.add_argument('-r', '--reference', nargs=1, default='',
+                        help='add reference tag to identify deviations')
 
     parser.add_argument('audit', type=str, nargs=1,
                         help='audit files to use as source')
@@ -59,8 +64,12 @@ def parse_args(parameters):
         show_verbose = True
 
     args.filename = make_list(args.filename)[0]
+    args.reference = make_list(args.reference)[0]
     args.audit = make_list(args.audit)[0]
     args.nessus = make_list(args.nessus)[0]
+
+    if not args.reference == '' and not regexes['ref_arg'].match(args.reference):
+        display('Invalid reference parameter ([A-Za-z_-]+): {}'.format(args.reference), exit=1)
 
     return args
 
@@ -134,13 +143,16 @@ def get_values_from_nessus(contents):
                 for item in host.findall('ReportItem'):
                     description = ''
                     value = no_value
+                    result = no_value
                     for child in item:
                         if 'compliance-check-name' in child.tag:
                             description = child.text.strip()
                         elif 'compliance-actual-value' in child.tag:
                             value = child.text
-                    if description and value != no_value:
-                        values[hostname][description] = value
+                        if 'compliance-result' in child.tag:
+                            result = child.text.strip()
+                    if description and value != no_value and result != no_value:
+                        values[hostname][description] = (value, result)
     except Exception as e:
         display('ERROR: parsing nessus file: {}'.format(e), exit=1)
         sys.exit(1)
@@ -194,7 +206,7 @@ def quote_and_escape_value(source, plugin):
     return value
 
 
-def apply_values_to_audit(filename, contents, values):
+def apply_values_to_audit(filename, contents, values, reference=''):
     global regexes
 
     audits = {}
@@ -208,6 +220,8 @@ def apply_values_to_audit(filename, contents, values):
         audit_lines = []
         in_condition = False
         in_item = False
+        found_ref = False
+        result = None
         known_good = ''
         space = ''
 
@@ -220,14 +234,19 @@ def apply_values_to_audit(filename, contents, values):
 
             elif regexes['sitem'].match(line):
                 in_item = True
+                found_ref = False
 
             elif regexes['eitem'].match(line):
+                if not reference == '' and not found_ref:
+                    value = format_reference(result, reference)
+                    new_line = '{}reference : "{}"'.format(space, value)
+                    audit_lines.append(new_line)
                 if not known_good == '':
                     value = quote_and_escape_value(known_good, plugin)
                     new_line = '{}known_good : {}'.format(space, value)
                     audit_lines.append(new_line)
                 known_good = ''
-
+                result = None
                 in_item = False
 
             elif regexes['desc'].match(line):
@@ -235,14 +254,40 @@ def apply_values_to_audit(filename, contents, values):
                 stripped = strip_quotes(description)
 
                 if stripped in values[host]:
-                    known_good = values[host][stripped]
+                    known_good = values[host][stripped][0]
+                    result = values[host][stripped][1]
                     space = regexes['desc'].findall(line)[0]
+
+            elif not reference == '' and regexes['ref'].match(line):
+                elements = line.split('"')
+                current_refs = elements[1].split(',')
+                for x in range(len(current_refs)):
+                    parts = current_refs[x].strip().split('|')
+                    if parts[0] == reference:
+                        current_refs[x] = format_reference(result, reference)
+                        found_ref = True
+
+                if not found_ref:
+                    current_refs.append(format_reference(result, reference))
+
+                elements[1] = ','.join(current_refs)
+                line = '"'.join(elements)
+                found_ref = True
 
             audit_lines.append(line)
 
         audits[auditname] = '\n'.join(audit_lines)
 
     return audits
+
+
+def format_reference(result, reference):
+    dev = 'review'
+    if result == 'FAILED':
+        dev = 'deviation'
+    elif result == 'PASSED':
+        dev = 'compliant'
+    return '{}|{}'.format(reference, dev)
 
 
 def output_audits(audits, overwrite, output_file):
@@ -265,7 +310,7 @@ if __name__ == '__main__':
     display('Reading audit file')
     audit = read_file(args.audit)
     display('Applying values')
-    outputs = apply_values_to_audit(args.audit, audit, values)
+    outputs = apply_values_to_audit(args.audit, audit, values, args.reference)
     display('Outputing file')
     output_audits(outputs, args.overwrite, args.filename)
     display('Done')
