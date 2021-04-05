@@ -17,3 +17,7 @@ Python script to visualize the structure of the audit file, most notably the con
 
 Python script to take the properties from a .nessus file and place them in a 2nd .nessus file to allow it to be imported into Tenable.sc.
 
+## parse_wrapper/audit_parse.py
+
+Python script that wraps around executing `nasl` and a compliance plugin to parse audit files and output to JSON or other information.
+
