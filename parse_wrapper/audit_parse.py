@@ -171,8 +171,8 @@ def find_plugins(path, nasl):
         display('Compliance plugins are not found.', exit=True)
     else:
         s = ''
-        if len(audits) > 1: s = 's'
-        display('Found plugin{} found: {}'.format(s, ', '.join(sorted(list(plugins)))), verbose=True)
+        if len(plugins) > 1: s = 's'
+        display('Plugin{} supported: {}'.format(s, ', '.join(sorted(list(plugins)))), verbose=True)
 
     return plugins
 

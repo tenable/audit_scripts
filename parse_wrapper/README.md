@@ -2,7 +2,13 @@
 
 ## Description
 
-The __audit_parse.py__ script is a wrapper around the Nessus command line processors (`nasl`) and the compliance plugins  to view audit file meta-data, which includes syntax errors.  The script uses a feature that is being deployed in plugins that allow the processing of an audit file without the requirement to connect to a target.
+The __audit_parse.py__ script is a wrapper around the Nessus command line processors (`nasl`) and the compliance plugins  to view audit file meta-data, which includes syntax errors.
+
+The script uses a feature that is being deployed in plugins that allow the processing of an audit file without the requirement to connect to a target.  Not all compliance plugin may support the feature required.  To find out what plugins are available to use this feature, run the script with the verbose (`-v`) option and look for something similar to the following to know which plugins are supported.:
+
+```
+Plugins supported: Adtran, Alcatel, Cisco, Unix
+```
 
 This script is provided as-is to attempt to assist in checking audit files with its native parser to provide feedback on the audit syntax.
 
@@ -55,7 +61,7 @@ test$ ./audit_parse.py -tv bad_test.audit
 2021/04/05 16:24:43 Start
 2021/04/05 16:24:43 1 audit to process.
 2021/04/05 16:24:43 Using Nessus executable at /opt/nessus/bin/nasl.
-2021/04/05 16:24:52 Found plugin found: Adtran, Alcatel, Cisco, Unix
+2021/04/05 16:24:52 Plugins supported: Adtran, Alcatel, Cisco, Unix
 2021/04/05 16:24:52 Running nasl to parse audit: bad_test.audit
 2021/04/05 16:24:52 Audit: bad_test.audit
 2021/04/05 16:24:52 Metadata:
