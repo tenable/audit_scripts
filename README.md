@@ -21,3 +21,6 @@ Python script to take the properties from a .nessus file and place them in a 2nd
 
 Python script that wraps around executing `nasl` and a compliance plugin to parse audit files and output to JSON or other information.
 
+## cli_scanning
+
+Collection of instructions and Python script to execute CLI scans on a local Nessus scanner, or in Tenable.io via the API.
