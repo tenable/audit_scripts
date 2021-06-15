@@ -25,48 +25,19 @@ These steps need to be performed from an OS with Nessus installed.
    * Window: C:\ProgramData\Tenable\Nessus\nessus\plugins
    * Linux/Unix: /opt/nessus/lib/nessus/plugins
 
-4. Determine which plugin is appropriate for the target/audit:
-   * adtran_compliance_check.nbin
-   * alcatel_compliance_check.nbin
-   * amazon_aws_compliance_check.nbin
-   * arista_compliance_check.nbin
-   * azure_compliance_check.nbin
-   * bluecoat_compliance_check.nbin
-   * brocade_compliance_check.nbin
-   * checkpoint_gaia_compliance_check.nbin
-   * cisco_compliance_check.nbin
-   * cisco_firepower_compliance_check.nbin
-   * citrix_xenserver_compliance_check.nbin
-   * compliance_check.nbin ← This is the Windows Compliance Plugin
-   * compliance_check_windows_file_content.nbin ← This is the Windows File Content Compliance Plugin
-   * database_compliance_check.nbin
-   * dell_force10_compliance_check.nbin
-   * extreme_extremexos_compliance_check.nbin
-   * f5_compliance_check.nbin
-   * fireeye_compliance_check.nbin
-   * fortigate_compliance_check.nbin
-   * generic_ssh_compliance_check.nbin
-   * hp_procurve_compliance_check.nbin
-   * huawei_compliance_check.nbin
-   * ibm_bigfix_compliance_1_9_70.nasl
-   * ibm_bigfix_compliance_detect.nbin
-   * iseries_compliance_check.nbin
-   * juniper_compliance_check.nbin
-   * mdm_compliance_check.nbin
-   * mongodb_compliance_check.nbin
-   * netapp_api_compliance_check.nbin
-   * netapp_dataontap_compliance_check.nbin
-   * office365_compliance_check.nbin
-   * openstack_compliance_check.nbin
-   * palo_alto_compliance_check.nbin
-   * rackspace_compliance_check.nbin
-   * rhev_compliance_check.nbin
-   * salesforce_compliance_check.nbin
-   * sonicwall_compliance_check.nbin
-   * unix_compliance_check.nbin
-   * unix_file_content_compliance_check.nbin
-   * vmware_compliance_check.nbin
-   * watchguard_compliance_check.nbin
+4. Determine which plugin is appropriate for the target/audit.  To get a list of plugins, list `*compliance_check*.nbin` in the plugins directory from step 3.
+
+```
+# ls /opt/nessus/lib/nessus/plugins/*compliance_check*.nbin
+
+/opt/nessus/lib/nessus/plugins/adtran_compliance_check.nbin
+/opt/nessus/lib/nessus/plugins/alcatel_compliance_check.nbin
+...
+/opt/nessus/lib/nessus/plugins/compliance_check.nbin ← Windows Compliance Plugin
+...
+/opt/nessus/lib/nessus/plugins/watchguard_compliance_check.nbin
+/opt/nessus/lib/nessus/plugins/zte_compliance_check.nbin
+```
 
 ## Running on Windows
 
@@ -253,24 +224,32 @@ DEBUG: compliance_init(): Lexing predefined policies
 ## Requirements
 * python3
 * pytenable package
-* tio_scan.py (from scripts directory)
+* tio_scan.py
+* credential saved in Tenable.io
 
-You will find some sample_xxx.py python files for reference in the scripts directory.  Create one of these files for each scan.  At a minimum you will need to update fields:
-* access_key - Tenable.io API access_key
-* secret_key - Tenable.io API secret_key
-* scanner - Tenable.io Linked Scanner Name
-* targets - List of IPs/subnets to scan
-* audit_files - List of audit files to attach to the scan
-* credentials - Credentials to be used for scans
+The tio_scan.py script allows you to execute compliance scans against targets via the Tenable.io API.
 
-> NOTE: these files need to be protected as they contain sensitive information such as Tenable.io api keys, and target credentials.
+> WARNING - this method will expose Tenable.io api keys in shell history, and in the process list.
 
-### To execute the scan run:
+There are 2 main modes for the tio_scan.py script.  The first mode is to pass the `--list_credentials` flag.  This will return a list of saved credentials from Tenable.io.  The second mode is to pass the `--scan` flag.  This will create a scan in Tenable.io, scan a target, export the results, and optionally delete the scan.
 
-```# python3 sample_linux.py```
+### List credentials example:
 
-### Sample output:
 ```
+# python3 tio_scan.py --access_key <access_key> --secret_key <secret_key> --list_credentials
+
+[+] Fetching credentials list
+Name                            UUID                                  Category                        Type                          
+==============================  ====================================  ==============================  ==============================
+windows-test                    12345678-abcd-4476-917c-1234567890ab  Host                            Windows                       
+linux-test                      12345678-abcd-4e12-afe3-1234567890ab  Host                            SSH                           
+```
+
+### Scan example:
+
+```
+# python3 tio_scan.py --access_key <access_key> --secret_key <secret_key> --scan --target 192.168.1.1 --credential 12345678-abcd-4e12-afe3-1234567890ab --scanner my-scanner --audit test.audit
+
 [+] Uploading audits
     CIS_CentOS_7_Server_L2_v3.0.0.audit
 [+] Creating scan
