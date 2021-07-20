@@ -138,7 +138,7 @@ def convert_script_to_item(source, encode=False, destination=None):
   description          : "{}"
   value_type           : POLICY_TEXT
   value_data           : "{}"
-  powershell_args      : "{}"
+  powershell_args      : '{}'
   ps_encoded_args      : {}
   only_show_cmd_output : YES
   check_type           : {}
