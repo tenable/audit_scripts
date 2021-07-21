@@ -113,7 +113,7 @@ def convert_script_to_item(source, destination=None):
 
     content = script.replace('\\', '\\\\').replace('"', '\\"')
 
-    desc = settings.get('name', 'PS: {}'.format(basename))
+    desc = settings.get('name', 'CMD: {}'.format(basename))
     expect = settings.get('expect', 'ManualReview').replace('\\', '\\\\').replace('"', '\\"')
     check_type = 'CHECK_{}'.format(settings.get('type', 'REGEX'))
 

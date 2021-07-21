@@ -137,7 +137,6 @@ def convert_script_to_item(source, encode=False):
   value_data           : "{}"
   powershell_args      : '{}'
   ps_encoded_args      : {}
-  only_show_cmd_output : YES
   check_type           : {}
 </custom_item>
 '''
