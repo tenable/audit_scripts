@@ -23,13 +23,13 @@ This script is provided as-is to attempt to assist in batch creation of an audit
 
 - Copy the python script to a system that has the powershell scripts
 - Run the python script with the directory name.
-    - `./build_powershell_audit.py test_unix_host.audit`
+    - `./build_powershell_audit.py powershell_scripts`
 - Use the resulting audit file 
 
 ### Usage
 
 ```
-usage: build_powershell_audit.py [-h] [-E] [-t] [-v] [-c CHECKS] [-o OUTPUT]
+usage: build_powershell_audit.py [-h] [-E] [-t] [-v] [-o OUTPUT]
                                  powershell
 
 Convert powershell scripts into audit items
@@ -42,8 +42,6 @@ optional arguments:
   -E, --encode          encode checks into base64
   -t, --timestamp       show timestamp on output
   -v, --verbose         show verbose output
-  -c CHECKS, --checks CHECKS
-                        directory of audit checks
   -o OUTPUT, --output OUTPUT
                         output audit name
 ```
@@ -55,7 +53,7 @@ test$ ./build_powershell_audit.py powershell_scripts
 [+] Retrieving powershell scripts from "powershell_scripts"
 [-]   found 2 scripts
 [+] Processing scripts
-[-]   powershell_scripts/check_www.ps1: "WWW site review" is expecting "ManualReview"
-[-]   powershell_scripts/check_smtp.ps1: "SMTP service install" is expecting "Not Installed"
+[-]   powershell_scripts/check_smtp.ps1: "Check SMTP is installed and running" is expecting "ManualReview"
+[-]   powershell_scripts/check_www_not_installed.ps1: "Check WWW is not installed" is expecting "Not Installed"
 [+] Writing audit: output.audit
 ```
