@@ -1,4 +1,4 @@
-# Build Powershell Audit
+# Build Shell Script Audit
 
 ## Description
 
