@@ -4,6 +4,8 @@
 
 The __build_cmd_exec_audit.py__ script reads a directory of shell scripts with extensions of `.bash`, `.sh`, `.ksh`, or `txt`, and creates an audit the will run each of the scripts.
 
+If done manually, a shell script would be pasted into a `CMD_EXEC` style Unix check in the `cmd` field.  The value would have to be wrapped with double quotes (") and any double quotes inside the script being pasted in would have to be escaped with a backslash (\").
+
 The script will take advantage of comments placed inside the shell scripts to provide additional operation or more descriptive values.  The comments are in the form of `# key: value`.  The script will take the key and use it for a part of the check.  The following keys are availabl:
 
 * `name`: sets the value as the description of the check.  The default is to use the name of the cmd_exec file.
