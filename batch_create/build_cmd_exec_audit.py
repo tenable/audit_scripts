@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-# Description : Reads in a directory of powershell scripts and generates an
-#               audit file with each of the scripts as an encoded 
-#               AUDIT_POWERSHELL check.
+# Description : Reads in a directory of shell scripts and generates an
+#               audit file with each of the scripts as a
+#               CMD_EXEC check.
 
 
 import argparse
-import base64
 import datetime
 import os
 import re
@@ -23,11 +22,8 @@ def parse_args(parameters):
 
     default_audit = 'output.audit'
 
-    parser = argparse.ArgumentParser(description=('Convert powershell scripts '
+    parser = argparse.ArgumentParser(description=('Convert shell scripts '
                                                   'into audit items '))
-
-    parser.add_argument('-E', '--encode', action='store_true',
-                        help='encode checks into base64')
 
     parser.add_argument('-t', '--timestamp', action='store_true',
                         help='show timestamp on output')
@@ -37,8 +33,8 @@ def parse_args(parameters):
     parser.add_argument('-o', '--output', nargs=1, default=default_audit,
                         help='output audit name: {}'.format(default_audit))
 
-    parser.add_argument('powershell', nargs=1, type=str,
-                        help='location of powershell files')
+    parser.add_argument('shell', nargs=1, type=str,
+                        help='location of shell files')
 
     args = parser.parse_args(parameters)
 
@@ -48,7 +44,7 @@ def parse_args(parameters):
         show_verbose = True
 
     args.output = list_or_string(args.output)
-    args.powershell = list_or_string(args.powershell)
+    args.shell = list_or_string(args.shell)
 
     return args
 
@@ -83,29 +79,26 @@ def display(message, verbose=False, exit=0):
         sys.exit(exit)
 
 
-def get_ps_scripts(location):
+def get_sh_scripts(location):
+    exts = ('bash', 'sh', 'ksh', 'txt')
     scripts = []
 
     if os.path.isdir(location):
         for (root, dirs, files) in os.walk(location):
             for filename in files:
-                if filename.endswith('.ps1'):
+                if filename.split('.')[-1] in exts:
                     scripts.append(os.path.join(root, filename))
     elif os.path.isfile(location):
-        if location.endswith('.ps1'):
+        if filename.split('.')[-1] in exts:
             scripts.append(os.path.join(location))
 
     if len(scripts) == 0:
-        display('[!] ERROR: source powershell location not found', exit=True)
+        display('[!] ERROR: source shell location not found', exit=True)
 
     return scripts
 
 
-def encode_script(content):
-    return base64.b64encode(content.encode('utf-16le')).decode('ascii')
-
-
-def convert_script_to_item(source, encode=False):
+def convert_script_to_item(source, destination=None):
     global setting_re
 
     basename = '.'.join(os.path.basename(source).split('.')[:-1])
@@ -118,30 +111,21 @@ def convert_script_to_item(source, encode=False):
     for key, val in setting_re.findall(script):
         settings[key.lower()] = val
 
-    content = ''
-    encoded = 'NO'
-    if encode:
-        content = encode_script(script)
-        encoded = 'YES'
-    else:
-        content = script.replace("'", "\\'")
+    content = script.replace('\\', '\\\\').replace('"', '\\"')
 
-    desc = settings.get('name', 'PS: {}'.format(basename))
-    expect = settings.get('expect', 'ManualReview')
+    desc = settings.get('name', 'CMD: {}'.format(basename))
+    expect = settings.get('expect', 'ManualReview').replace('\\', '\\\\').replace('"', '\\"')
     check_type = 'CHECK_{}'.format(settings.get('type', 'REGEX'))
 
     item = '''<custom_item>
-  type                 : AUDIT_POWERSHELL
-  description          : "{}"
-  value_type           : POLICY_TEXT
-  value_data           : "{}"
-  powershell_args      : '{}'
-  ps_encoded_args      : {}
-  check_type           : {}
+  type          : CMD_EXEC
+  description   : "{}"
+  cmd           : "{}"
+  expect        : "{}"
+  dont_echo_cmd : YES
 </custom_item>
 '''
-
-    check = item.format(desc, expect, content, encoded, check_type)
+    check = item.format(desc, content, expect)
 
     display('[-]   {}: "{}" is expecting "{}"'.format(source, desc, expect))
 
@@ -149,12 +133,11 @@ def convert_script_to_item(source, encode=False):
 
 
 def output_audit(items, output):
-    content = '''<check_type:"Windows" version:"2">
-<group_policy:"Auto-gened: {}">
+    content = '''# {}
+<check_type:"Unix">
 
 {}
 
-</group_policy>
 </check_type>'''
 
     now = datetime.datetime.now()
@@ -168,14 +151,14 @@ if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     display('[+] Start', verbose=True)
 
-    display('[+] Retrieving powershell scripts from "{}"'.format(args.powershell))
-    scripts = get_ps_scripts(args.powershell)
+    display('[+] Retrieving shell scripts from "{}"'.format(args.shell))
+    scripts = get_sh_scripts(args.shell)
     display('[-]   found {} script{}'.format(len(scripts), 's' * (len(scripts) - 1)))
 
     items = []
     display('[+] Processing scripts')
     for script in scripts:
-        item = convert_script_to_item(script, args.encode)
+        item = convert_script_to_item(script)
         if item is not None:
             items.append(item)
 
