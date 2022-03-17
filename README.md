@@ -24,3 +24,7 @@ Python script that wraps around executing `nasl` and a compliance plugin to pars
 ## cli_scanning
 
 Collection of instructions and Python script to execute CLI scans on a local Nessus scanner, or in Tenable.io via the API.
+
+## nessus_to_csv/nessus_to_csv.py
+
+Python script that converts a `.nessus` export to CSV.
