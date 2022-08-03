@@ -278,7 +278,7 @@ def write_data(filename, file_format, data):
 
 
 def write_csv(filename, data):
-    display('Writing CSV file: {}'.format(filename), verbose=True)
+    display('Writing CSV file: {}'.format(filename))
 
     fields = set(['target'])
     values = []
@@ -308,7 +308,7 @@ def write_csv(filename, data):
 
 
 def write_json(filename, data):
-    display('Writing JSON file: {}'.format(filename), verbose=True)
+    display('Writing JSON file: {}'.format(filename))
     with open(filename, 'w') as jout:
         json.dump(data, jout)
 
