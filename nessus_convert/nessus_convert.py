@@ -198,7 +198,7 @@ def collapse(data):
             if k == 'reference':
                 refs.update(item[k].split(','))
             elif k == 'result':
-                actual_desc = 'ERROR'
+                actual_desc = item[k]
                 if k not in collapsed:
                     collapsed[k] = item[k]
                 elif result_value[item[k]] > result_value[collapsed[k]]:
