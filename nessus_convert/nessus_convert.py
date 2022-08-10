@@ -106,67 +106,68 @@ def display(message, verbose=False, exit_code=0):
         sys.exit(exit_code)
 
 
-def read_file(filename):
-    contents = ''
-    try:
-        display('Reading {}'.format(filename), verbose=True)
-        with open(filename, 'r') as file_in:
-            contents = file_in.read()
-    except Exception as e:
-        display('ERROR: read_file(): reading file: {}: {}'.format(filename, e), exit_code=1)
-
-    return contents
-
-
-def get_compliance_data(contents):
+def get_compliance_data(filename):
     data = []
+    if not os.path.isfile(filename):
+        display('File does not exist: {}'.format(filename), exitcode=2)
 
     try:
-        tree = ET.fromstring(contents)
-        reports = tree.findall('Report')
-        report_name = reports[0].attrib.get('name', None)
+        report_name = 'None'
+        is_compliance = False
+        host_value = None
+        item_value = None
+        record_host_properties = False
 
-        hosts = tree.findall('Report/ReportHost')
-        for host in hosts:
-            hostname = host.attrib.get('name', None)
+        for event, elem in ET.iterparse(filename, events=('start', 'end')):
+            if event == 'end' and elem.tag == 'policyName':
+                report_name = elem.text
 
-            value = {
-                'target': hostname,
-                'report': report_name,
-            }
+            elif event == 'start':
+                if elem.tag == 'ReportHost':
+                    host_value = {
+                      'report': report_name,
+                      'target': elem.attrib.get('name', None)
+                    }
 
-            tags = host.findall('HostProperties/tag')
-            for tag in tags:
-                tag_name = tag.attrib.get('name', None)
-                if tag_name in ('host-fqdn', 'host-ip', 'HOST_START_TIMESTAMP', 'HOST_END_TIMESTAMP'):
-                    tag_name = tag_name.lower().replace('-', '_')
-                    if 'timestamp' in tag_name:
-                        value[tag_name.replace('_timestamp', '')] = int(tag.text)
-                    else:
-                        value[tag_name] = tag.text
+                elif elem.tag == 'HostProperties':
+                    record_host_properties = True
 
-            value['results'] = []
-            items = host.findall('ReportItem')
-            for item in items:
-                is_compliance = item.find('compliance')
-                if is_compliance is None:
-                    continue
+                elif elem.tag == 'ReportItem':
+                    item_value = {
+                        'plugin_id': elem.attrib['pluginID'],
+                        'plugin_name': elem.attrib['pluginName']
+                    }
 
-                comp = {
-                    'plugin_id': item.attrib['pluginID'],
-                    'plugin_name': item.attrib['pluginName']
-                }
-                for elem in item:
-                    if '{http://www.nessus.org/cm}' not in elem.tag:
-                        continue
+            elif event == 'end':
+                if elem.tag == 'ReportHost':
+                    data.append(host_value)
+                    host_value = None
 
+                elif elem.tag == 'HostProperties':
+                    record_host_properties = False
+                    host_value['results'] = []
+
+                elif record_host_properties:
+                    tag_name = elem.attrib.get('name', None)
+                    if tag_name in ('host-fqdn', 'host-ip', 'HOST_START_TIMESTAMP', 'HOST_END_TIMESTAMP'):
+                        tag_name = tag_name.lower().replace('-', '_')
+                        if 'timestamp' in tag_name:
+                            host_value[tag_name.replace('_timestamp', '')] = int(elem.text)
+                        else:
+                            host_value[tag_name] = elem.text
+
+                elif elem.tag == 'ReportItem':
+                    if is_compliance:
+                        host_value['results'].append(item_value)
+                    item_value = None
+                    is_compliance = False
+
+                elif '{http://www.nessus.org/cm}' in elem.tag:
+                    is_compliance = True
                     field = elem.tag.replace('{http://www.nessus.org/cm}compliance-', '')
-                    if field in ('source', 'uname', 'dbtype'):
-                        continue
+                    if field not in ('source', 'uname', 'dbtype'):
+                        item_value[field.replace('-', '_')] = elem.text
 
-                    comp[field.replace('-', '_')] = elem.text
-                value['results'].append(comp)
-            data.append(value)
     except Exception as e:
         display('ERROR: get_compliance_data(): {}'.format(e), exit_code=1)
 
@@ -318,8 +319,7 @@ if __name__ == '__main__':
 
     for filename in args.files:
         display('Processing file: {}'.format(filename))
-        nessus = read_file(filename)
-        data = get_compliance_data(nessus)
+        data = get_compliance_data(filename)
         for host in data:
             display('Found {} results for host {}.'.format(len(host['results']), host['target']), verbose=True)
 
