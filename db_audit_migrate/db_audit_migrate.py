@@ -24,10 +24,10 @@ group_policy_re = re.compile('^\\s*</?\\s*group_policy\\s*(:\\s*"([^"]+)"\\s*)?>
 open_item_re = re.compile('^\\s*<\\s*custom_item\\s*>')
 close_item_re = re.compile('^\\s*</\\s*custom_item\\s*>')
 field_replace_re = re.compile('^(\\s*[^\\s:]+\\s*: *).*$')
-sql_field_re = re.compile('^ *(sql_(request|types|expect)) *: .*')
-simple_quoted_field_re = re.compile('^ *([a-z0-9_-]+) *: *(["\'])[^\\2]*\\2 *$')
-simple_unquoted_field_re = re.compile('^ *([a-z0-9_-]+) *: *[A-Za-z0-9_-]+ *$')
-select_re = re.compile('(?i)^select (.*?) from')
+sql_field_re = re.compile('^\\s*(sql_(request|types|expect))\\s*:\\s.*')
+simple_quoted_field_re = re.compile('^\\s*([a-z0-9_-]+)\\s*:\\s*(["\'])[^\\2]*\\2\\s*$')
+simple_unquoted_field_re = re.compile('^\\s*([a-z0-9_-]+)\\s*:\\s*[A-Za-z0-9_-]+\\s*$')
+select_re = re.compile('(?i)^select\\s(.*?) from')
 
 
 def parse_args(parameters):
