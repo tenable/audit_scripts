@@ -28,3 +28,7 @@ Collection of instructions and Python script to execute CLI scans on a local Nes
 ## nessus_convert/nessus_convert.py
 
 Python script that converts a `.nessus` export to CSV or JSON.
+
+## db_audit_migrate/db_audit_migrate.py
+
+Python script that converts an audit file from the Database plugin to a format supported by the new database specific plugins.
