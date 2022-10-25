@@ -216,7 +216,6 @@ def convert_audit(audit):
                 lines[sql_types] = line
                 line = '{}{}'.format(field_replace_re.findall(lines[sql_expect])[0], ', '.join([c[1] for c in computed]))
                 lines[sql_expect] = line
-#                if sql_request_fields is not None and len(sql_request_fields) != len(computed):
                 if sql_request is not None:
                     parts = lines[sql_request].split(':')
                     value = ':'.join(parts[1:]).strip(' \'"')
