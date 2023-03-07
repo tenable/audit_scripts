@@ -29,7 +29,8 @@ test_items = [
     '<ReportItem port="0" svc_name="general" protocol="tcp" severity="3" pluginID="21156" pluginName="Windows Compliance Checks" pluginFamily="Policy Compliance">\n<agent>windows</agent>\n<compliance>true</compliance>\n<fname>compliance_check.nbin</fname>\n<plugin_modification_date>2018/06/21</plugin_modification_date>\n<plugin_name>Windows Compliance Checks</plugin_name>\n<plugin_publication_date>2007/11/21</plugin_publication_date>\n<plugin_type>local</plugin_type>\n<risk_factor>None</risk_factor>\n<script_version>$Revision: 1.305 $</script_version>\n<cm:compliance-check-name>Test value one</cm:compliance-check-name>\n<cm:compliance-actual-value>0</cm:compliance-actual-value>\n<description>&quot;Test value one&quot;: [FAILED]\n</description>\n<cm:compliance-audit-file>CIS_MS_Windows_7_L1_v3.0.1.var_replace.audit</cm:compliance-audit-file>\n<cm:compliance-check-id>993c788cf6b875e558ea4d65476dc71e</cm:compliance-check-id>\n<cm:compliance-policy-value>[24..4294967295]</cm:compliance-policy-value>\n<cm:compliance-info>\nAbridged compliance\ninformation here</cm:compliance-info>\n<cm:compliance-result>FAILED</cm:compliance-result>\n<cm:compliance-reference>800-171|3.5.8,800-53|IA-5</cm:compliance-reference>\n<cm:compliance-solution>Abridged compliance\nsolution here</cm:compliance-solution>\n<cm:compliance-see-also>https://benchmarks.cisecurity.org/tools2/windows/CIS_Microsoft_Windows_7_Workstation_Benchmark_v3.0.1.pdf</cm:compliance-see-also>\n</ReportItem>',
     '<ReportItem>\n<cm:compliance-check-name>Test value two</cm:compliance-check-name>\n<cm:compliance-result>FAILED</cm:compliance-result><cm:compliance-actual-value>0</cm:compliance-actual-value>\n</ReportItem>',
     '<ReportItem>\n<cm:compliance-check-name>Test value three</cm:compliance-check-name>\n<cm:compliance-result>PASSED</cm:compliance-result><cm:compliance-actual-value>This is\nmulti-line</cm:compliance-actual-value>\n</ReportItem>',
-    '<ReportItem>\n<cm:compliance-check-name>Test value two for 2nd host</cm:compliance-check-name>\n<cm:compliance-result>WARNING</cm:compliance-result><cm:compliance-actual-value>1</cm:compliance-actual-value>\n</ReportItem>'
+    '<ReportItem>\n<cm:compliance-check-name>Test value two for 2nd host</cm:compliance-check-name>\n<cm:compliance-result>WARNING</cm:compliance-result><cm:compliance-actual-value>1</cm:compliance-actual-value>\n</ReportItem>',
+    '<ReportItem>\n<cm:compliance-check-name>Test long complex escape filled value</cm:compliance-check-name>\n<cm:compliance-result>FAILED</cm:compliance-result><cm:compliance-actual-value>The command &apos;tst1=&quot;&quot; tst2=&quot;&quot; output=&quot;&quot;; grubdir=$(dirname &quot;$(find /boot -type f \\( -name &apos;grubenv&apos; -o -name &apos;grub.conf&apos; -o -name &apos;grub.cfg&apos; \\) -exec grep -El &apos;^\\s*(kernelopts=|linux|kernel)&apos; {} \\;)&quot;); if [ -f &quot;$grubdir/user.cfg&quot; ]; then grep -Pq &apos;^\\h*GRUB2_PASSWORD\\h*=\\h*.+$&apos; &quot;$grubdir/user.cfg&quot; &amp;&amp; output=&quot;bootloader password set in \\&quot;$grubdir/user.cfg\\&quot;&quot;; fi; if [ -z &quot;$output&quot; ]; then grep -Piq &apos;^\\h*set\\h+superusers\\h*=\\h*&quot;?[^&quot;\\n\\r]+&quot;?(\\h+.*)?$&apos; &quot;$grubdir/grub.cfg&quot; &amp;&amp; tst1=pass; grep -Piq &apos;^\\h*password(_pbkdf2)?\\h+\\H+\\h+.+$&apos; &quot;$grubdir/grub.cfg&quot; &amp;&amp; tst2=pass; [ &quot;$tst1&quot; = pass ] &amp;&amp; [ &quot;$tst2&quot; = pass ] &amp;&amp; output=&quot;bootloader password set in \\&quot;$grubdir/grub.cfg\\&quot;&quot;; fi; [ -n &quot;$output&quot; ] &amp;&amp; echo -e &quot;\\n\\n PASSED $output\\n\\n&quot;&apos; returned :</cm:compliance-actual-value>\n</ReportItem>'
 ]
 
 
@@ -191,6 +192,17 @@ def test_get_values_from_nessus_value_with_newline():
     assert get_values_from_nessus(values) == {
         '192.168.0.10': {
             'Test value three': ('This is\nmulti-line', 'PASSED')
+        }
+    }
+
+
+def test_get_values_from_nessus_value_with_long_value():
+    values = generate_test_content({'192.168.0.10': (5,)})
+    assert get_values_from_nessus(values) == {
+        '192.168.0.10': {
+            'Test long complex escape filled value': (
+                'The command \'tst1="" tst2="" output=""; grubdir=$(dirname "$(find /boot -type f \\( -name \'grubenv\' -o -name \'grub.conf\' -o -name \'grub.cfg\' \\) -exec grep -El \'^\\s*(kernelopts=|linux|kernel)\' {} \\;)"); if [ -f "$grubdir/user.cfg" ]; then grep -Pq \'^\\h*GRUB2_PASSWORD\\h*=\\h*.+$\' "$grubdir/user.cfg" && output="bootloader password set in \\"$grubdir/user.cfg\\""; fi; if [ -z "$output" ]; then grep -Piq \'^\\h*set\\h+superusers\\h*=\\h*"?[^"\\n\\r]+"?(\\h+.*)?$\' "$grubdir/grub.cfg" && tst1=pass; grep -Piq \'^\\h*password(_pbkdf2)?\\h+\\H+\\h+.+$\' "$grubdir/grub.cfg" && tst2=pass; [ "$tst1" = pass ] && [ "$tst2" = pass ] && output="bootloader password set in \\"$grubdir/grub.cfg\\""; fi; [ -n "$output" ] && echo -e "\\n\\n PASSED $output\\n\\n"\' returned :',
+                'FAILED')
         }
     }
 
@@ -399,11 +411,15 @@ def test_apply_values_to_audit_quoted_values():
         [{ '192.168.0.10': { 'Test value one': ('ab"cd', 'PASSED') }}, '\'ab"cd\''],
         [{ '192.168.0.10': { 'Test value one': ("ab'cd", 'PASSED') }}, '"ab\'cd"'],
         [{ '192.168.0.10': { 'Test value one': ('abcd', 'PASSED') }}, '"abcd"'],
-        [{ '192.168.0.10': { 'Test value one': ('a"bc\'"d', 'PASSED') }}, '"a\\"bc\'\\"d"']
+        [{ '192.168.0.10': { 'Test value one': ('a"bc\'"d', 'PASSED') }}, '"a\\"bc\'\\"d"'],
+        [{ '192.168.0.10': { 'Test value one': (None, 'PASSED') }}, None]
     ]
     for (test_value, expected_value) in test_values:
         actual = apply_values_to_audit('abc.audit', test_content, test_value)
-        test_expected = expected_content.replace('__VAL__', expected_value)
+        if expected_value is not None:
+            test_expected = expected_content.replace('__VAL__', expected_value)
+        else:
+            test_expected = '\n'.join([l for l in expected_content.split('\n') if 'known_good' not in l])
         expected = {'abc.192.168.0.10.audit': test_expected}
         assert actual == expected
 
@@ -437,6 +453,9 @@ def test_quote_and_escape_value():
     assert quote_and_escape_value("a\"bc", None) == "'a\"bc'"
     assert quote_and_escape_value("a\"bc", 'Windows') == "'a\"bc'"
     assert quote_and_escape_value("a\"bc", 'Unix') == '"a\\"bc"'
+    v = 'The command \'tst1="" tst2="" output=""; grubdir=$(dirname "$(find /boot -type f \\( -name \'grubenv\' -o -name \'grub.conf\' -o -name \'grub.cfg\' \\) -exec grep -El \'^\\s*(kernelopts=|linux|kernel)\' {} \\;)"); if [ -f "$grubdir/user.cfg" ]; then grep -Pq \'^\\h*GRUB2_PASSWORD\\h*=\\h*.+$\' "$grubdir/user.cfg" && output="bootloader password set in \\"$grubdir/user.cfg\\""; fi; if [ -z "$output" ]; then grep -Piq \'^\\h*set\\h+superusers\\h*=\\h*"?[^"\\n\\r]+"?(\\h+.*)?$\' "$grubdir/grub.cfg" && tst1=pass; grep -Piq \'^\\h*password(_pbkdf2)?\\h+\\H+\\h+.+$\' "$grubdir/grub.cfg" && tst2=pass; [ "$tst1" = pass ] && [ "$tst2" = pass ] && output="bootloader password set in \\"$grubdir/grub.cfg\\""; fi; [ -n "$output" ] && echo -e "\\n\\n PASSED $output\\n\\n"\' returned :'
+    r = v.replace('\\', '\\\\').replace('"', '\\"')
+    assert quote_and_escape_value(v, 'Unix') == '"' + r + '"'
 
 
 if __name__ == '__main__':
