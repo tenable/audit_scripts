@@ -201,7 +201,7 @@ def quote_and_escape_value(source, plugin):
     if '"' in source and "'" not in source and not plugin in ('Unix',):
         value = "'{}'".format(source)
     else:
-        value = '"{}"'.format(source.replace('"', '\\"'))
+        value = '"{}"'.format(source.replace('\\', '\\\\').replace('"', '\\"'))
 
     return value
 
@@ -241,7 +241,7 @@ def apply_values_to_audit(filename, contents, values, reference=''):
                     value = format_reference(result, reference)
                     new_line = '{}reference : "{}"'.format(space, value)
                     audit_lines.append(new_line)
-                if not known_good == '':
+                if not known_good == '' and known_good is not None:
                     value = quote_and_escape_value(known_good, plugin)
                     new_line = '{}known_good : {}'.format(space, value)
                     audit_lines.append(new_line)
